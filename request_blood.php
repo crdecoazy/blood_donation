@@ -13,13 +13,17 @@ $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $blood_group = $_POST['blood_group'];
+    $patient_name = $_POST['patient_name'];
+    $patient_condition = $_POST['patient_condition'];
+    $patient_contact = $_POST['patient_contact'];
+    $hospital_details = $_POST['hospital_details'];
 
-    if (empty($blood_group)) {
-        $error = 'Please select a blood group.';
+    if (empty($blood_group) || empty($patient_name)) {
+        $error = 'Blood group and patient name are required.';
     } else {
         // Insert the request into the database
-        $stmt = $conn->prepare("INSERT INTO blood_requests (user_id, blood_group) VALUES (?, ?)");
-        $stmt->bind_param("is", $user_id, $blood_group);
+        $stmt = $conn->prepare("INSERT INTO blood_requests (user_id, blood_group, patient_name, patient_condition, patient_contact, hospital_details) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("isssss", $user_id, $blood_group, $patient_name, $patient_condition, $patient_contact, $hospital_details);
 
         if ($stmt->execute()) {
             $success = 'Your blood request has been submitted successfully.';
@@ -63,6 +67,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                 <option value="<?php echo $bg; ?>"><?php echo $bg; ?></option>
                             <?php endforeach; ?>
                         </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="patient_name">Patient Name</label>
+                        <input type="text" name="patient_name" id="patient_name" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="patient_condition">Patient Condition</label>
+                        <textarea name="patient_condition" id="patient_condition" class="form-control"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="patient_contact">Patient Contact</label>
+                        <input type="text" name="patient_contact" id="patient_contact" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="hospital_details">Admitted Hospital Details</label>
+                        <textarea name="hospital_details" id="hospital_details" class="form-control"></textarea>
                     </div>
                     <button type="submit" class="btn btn-primary">Submit Request</button>
                 </form>

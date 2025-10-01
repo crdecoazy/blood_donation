@@ -67,8 +67,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['request_id'])) {
     exit();
 }
 
-// Fetch all blood requests
-$sql = "SELECT br.id, u.name, br.blood_group, br.status, br.request_date
+// Fetch all blood requests with patient details
+$sql = "SELECT br.id, u.name as requester_name, br.blood_group, br.status, br.request_date,
+               br.patient_name, br.patient_condition, br.patient_contact, br.hospital_details
         FROM blood_requests br
         JOIN users u ON br.user_id = u.id
         ORDER BY br.status = 'Pending' DESC, br.request_date DESC";
@@ -93,9 +94,9 @@ $requests = $conn->query($sql);
                 <table class="table table-striped">
                     <thead>
                         <tr>
-                            <th>Requester Name</th>
+                            <th>Requester</th>
+                            <th>Patient Name</th>
                             <th>Blood Group</th>
-                            <th>Request Date</th>
                             <th>Status</th>
                             <th>Action</th>
                         </tr>
@@ -104,9 +105,9 @@ $requests = $conn->query($sql);
                         <?php if ($requests->num_rows > 0): ?>
                             <?php while($row = $requests->fetch_assoc()): ?>
                                 <tr>
-                                    <td><?php echo htmlspecialchars($row['name']); ?></td>
+                                    <td><?php echo htmlspecialchars($row['requester_name']); ?></td>
+                                    <td><?php echo htmlspecialchars($row['patient_name']); ?></td>
                                     <td><?php echo htmlspecialchars($row['blood_group']); ?></td>
-                                    <td><?php echo date('d M, Y', strtotime($row['request_date'])); ?></td>
                                     <td>
                                         <?php
                                             $status = htmlspecialchars($row['status']);
@@ -117,6 +118,13 @@ $requests = $conn->query($sql);
                                         ?>
                                     </td>
                                     <td>
+                                        <button type="button" class="btn btn-info btn-sm" data-toggle="modal" data-target="#patientDetailsModal"
+                                            data-patient-name="<?php echo htmlspecialchars($row['patient_name']); ?>"
+                                            data-patient-condition="<?php echo htmlspecialchars($row['patient_condition']); ?>"
+                                            data-patient-contact="<?php echo htmlspecialchars($row['patient_contact']); ?>"
+                                            data-hospital-details="<?php echo htmlspecialchars($row['hospital_details']); ?>">
+                                            View Details
+                                        </button>
                                         <?php if ($row['status'] == 'Pending'): ?>
                                             <form action="admin_requests.php" method="post" style="display:inline-block;">
                                                 <input type="hidden" name="request_id" value="<?php echo $row['id']; ?>">
@@ -126,8 +134,6 @@ $requests = $conn->query($sql);
                                                 <input type="hidden" name="request_id" value="<?php echo $row['id']; ?>">
                                                 <button type="submit" name="action" value="reject" class="btn btn-danger btn-sm">Reject</button>
                                             </form>
-                                        <?php else: ?>
-                                            N/A
                                         <?php endif; ?>
                                     </td>
                                 </tr>
@@ -144,4 +150,45 @@ $requests = $conn->query($sql);
     </div>
 </div>
 
+<!-- Patient Details Modal -->
+<div class="modal fade" id="patientDetailsModal" tabindex="-1" role="dialog" aria-labelledby="patientDetailsModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="patientDetailsModalLabel">Patient Details</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p><strong>Patient Name:</strong> <span id="modal-patient-name"></span></p>
+        <p><strong>Patient Condition:</strong> <span id="modal-patient-condition"></span></p>
+        <p><strong>Patient Contact:</strong> <span id="modal-patient-contact"></span></p>
+        <p><strong>Hospital Details:</strong> <span id="modal-hospital-details"></span></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <?php include 'includes/footer.php'; ?>
+
+<script>
+$('#patientDetailsModal').on('show.bs.modal', function (event) {
+  var button = $(event.relatedTarget); // Button that triggered the modal
+  // Extract info from data-* attributes
+  var patientName = button.data('patient-name');
+  var patientCondition = button.data('patient-condition');
+  var patientContact = button.data('patient-contact');
+  var hospitalDetails = button.data('hospital-details');
+
+  // Update the modal's content.
+  var modal = $(this);
+  modal.find('#modal-patient-name').text(patientName);
+  modal.find('#modal-patient-condition').text(patientCondition);
+  modal.find('#modal-patient-contact').text(patientContact);
+  modal.find('#modal-hospital-details').text(hospitalDetails);
+});
+</script>
